@@ -232,6 +232,8 @@ export default function Signatures() {
 
   const faucetRecipientOk = useMemo(() => {
     const v = faucetTo?.trim() ?? '';
+    // If recipient is blank, runFaucet() will default to the connected wallet address.
+    if (!v) return true;
     return v.startsWith('0x') && v.length === 42;
   }, [faucetTo]);
 
@@ -601,7 +603,9 @@ export default function Signatures() {
 
               {!canMintPrincipalFaucet && (
                 <p className="text-[10px] text-warning mt-1">
-                  Enter a recipient address and a positive amount (wei) to enable mint.
+                  {!faucetAmountOk
+                    ? 'Enter a positive amount (wei) to enable mint.'
+                    : 'Recipient address must be a 0x… (42 chars) address, or leave it blank to mint to your wallet.'}
                 </p>
               )}
               <Button
