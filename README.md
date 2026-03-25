@@ -1,6 +1,6 @@
-# evvmtempodeploy
+# EVVM Tempo Deploy
 
-Web app for deploying EVVM (Ethereum Virtual Machine) contracts, registering instances on the Sepolia registry, and managing deployment manifests and signatures.
+Built for the OpenClaw Clinical Hackathon participants: a web app for deploying EVVM (Ethereum Virtual Machine) contracts, registering instances on the Sepolia registry, and managing deployment manifests and signatures.
 
 ## Features
 
