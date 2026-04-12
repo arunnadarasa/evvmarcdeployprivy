@@ -1,68 +1,121 @@
-# EVVM Tempo Deploy
+# EVVM Arc Deploy
 
-Built for the OpenClaw Clinical Hackathon participants: a web app for deploying EVVM (Ethereum Virtual Machine) contracts, registering instances on the Sepolia registry, and managing deployment manifests and signatures.
+A browser-based deploy console for launching EVVM instances on Arc Testnet, registering them on the official EVVM registry on Ethereum Sepolia, and managing deployment manifests and signature workflows.
+
+## Overview
+
+This frontend is adapted for:
+
+- **Host chain:** Arc Testnet
+- **RPC:** `https://rpc.testnet.arc.network`
+- **Chain ID:** `5042002`
+- **Explorer:** `https://testnet.arcscan.app`
+- **Registry chain:** Ethereum Sepolia
+
+The app uses bundled EVVM creation bytecodes plus client-side deployment logic to guide a full EVVM stack deployment from the browser.
 
 ## Features
 
-- **Deploy** – EVVM stack deployment on Tempo Moderato (chain 42431):
-  - Staking → EVVM Core (with CoreHashUtils) → Estimator → Name Service → Treasury → P2P Swap
-  - Automatic registration of the EVVM instance on the Ethereum Sepolia registry
-- **Registry** – Register deployed EVVMs and track deployment records
-- **Signatures** – Workflow for EVVM-related signing using `@evvm/viem-signature-library`
-- **Dashboard** – View and manage deployments
+- **Arc deployment flow**
+  - Deploys the EVVM contract stack on Arc Testnet:
+    - Staking
+    - CoreHashUtils library
+    - EVVM Core
+    - Estimator
+    - NameService
+    - Treasury
+    - P2PSwap
+  - Runs contract initialization steps between Staking, Core, NameService, and Treasury
+  - Switches to Ethereum Sepolia for `registerEvvm(...)`
+  - Switches back to Arc Testnet after registry completion
+
+- **Manifest dashboard**
+  - Stores deployment records locally
+  - Exposes contract addresses, tx hashes, and EVVM IDs
+  - Exports deployment manifests as JSON
+
+- **Signature tools**
+  - Supports EVVM signing flows powered by `@evvm/viem-signature-library`
+  - Includes EVVM principal-token faucet helpers for deployed testnet instances
+
+- **Arc-focused UX**
+  - Arc Testnet wallet targeting
+  - Arcscan explorer links
+  - Arc gas guidance for USDC-denominated transactions
 
 ## Tech stack
 
 - **Frontend:** React 18, TypeScript, Vite 8
-- **UI:** Tailwind CSS, shadcn/ui (Radix), Framer Motion
-- **Web3:** wagmi, RainbowKit, viem
-- **EVVM:** `@evvm/viem-signature-library` for ABIs and signature utilities
+- **UI:** Tailwind CSS, shadcn/ui, Framer Motion
+- **Wallet/Web3:** wagmi, RainbowKit, viem
+- **EVVM:** `@evvm/viem-signature-library`
 
 ## Prerequisites
 
 - Node.js 18+
-- npm or bun
+- npm
+- A wallet that can connect to:
+  - Arc Testnet
+  - Ethereum Sepolia
 
 ## Getting started
 
 ```bash
-# Install dependencies
 npm install
-
-# Run development server (default: http://localhost:8080)
 npm run dev
 ```
 
+Default local dev server:
+
+```text
+http://localhost:8080
+```
+
+## Deployment flow
+
+1. Connect a wallet on Arc Testnet.
+2. Fund that wallet for Arc Testnet transactions.
+3. Configure EVVM metadata and admin addresses in the app.
+4. Deploy the EVVM contracts on Arc.
+5. Approve the wallet switch to Ethereum Sepolia for registry registration.
+6. Approve the wallet switch back to Arc Testnet.
+
 ## Scripts
 
-| Command        | Description              |
-|----------------|--------------------------|
-| `npm run dev`  | Start Vite dev server    |
-| `npm run build`| Production build         |
-| `npm run build:dev` | Build in development mode |
-| `npm run preview`   | Preview production build |
-| `npm run lint`     | Run ESLint               |
-| `npm run test`     | Run Vitest once          |
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Create a production build |
+| `npm run build:dev` | Create a development-mode build |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run Vitest once |
 | `npm run test:watch` | Run Vitest in watch mode |
 
 ## Project structure
 
-- `src/pages/` – Deploy, Signatures, Dashboard, Index
-- `src/lib/contracts/` – Deployment logic, bytecodes, registry integration
-- `src/hooks/` – `useEVVMDeployment` and deployment state
-- `src/components/` – UI components and Web3Provider
+- `src/pages/` - App screens for home, deploy, signatures, and dashboard
+- `src/lib/contracts/` - Bytecodes, deploy orchestration, and registry interaction
+- `src/lib/wagmi.ts` - Arc Testnet and Sepolia wallet/network configuration
+- `src/hooks/useEVVMDeployment.ts` - Deployment progress and persistence logic
+- `src/components/` - Shared UI, wallet provider, navbar, and deploy cards
+
+## Notes
+
+- The deployer currently uses bundled EVVM bytecodes checked into `src/lib/contracts/bytecodes.ts`.
+- Registry registration still occurs on Ethereum Sepolia because that is where the EVVM registry contract lives.
+- The Vite dev server is configured for port `8080` in `vite.config.ts`.
 
 ## Lovable compatibility
 
-This repo is set up to work with [Lovable](https://lovable.dev) when the project is connected to GitHub:
+This repo is set up to work with [Lovable](https://lovable.dev):
 
-- **GitHub as source of truth:** Connect this repo in Lovable (Settings → Connectors → GitHub). Lovable syncs from the **default branch (`main`)** only. Push changes to `main` so Lovable loads this frontend.
-- **Dev server port:** The app runs on **port 8080** (`vite.config.ts`). Playwright is configured with `baseURL: http://localhost:8080` so Lovable’s browser tests hit the same app.
-- **Stack:** React + Vite + TypeScript + Tailwind, with `lovable-tagger` and `lovable-agent-playwright-config` for Lovable’s tooling.
-
-If Lovable was showing a different frontend, ensure the Lovable project is linked to **this** repository and that you’re on `main`. After pushing to `main`, Lovable will sync and preview this codebase.
+- Lovable syncs from the default branch, so keep the desired frontend on `main`.
+- The app runs on port `8080`, which matches the configured local development expectations.
+- The stack remains React + Vite + TypeScript + Tailwind with Lovable-compatible tooling.
 
 ## License
+
 MIT License
 
 Copyright (c) 2026 Arun Nadarasa
