@@ -101,11 +101,6 @@ export default function Signatures() {
   const [faucetAmount, setFaucetAmount] = useState('');
   const [faucetTx, setFaucetTx] = useState<string | null>(null);
 
-  // Tempo fee-token faucet (PathUSD) form
-  const [pathFaucetLoading, setPathFaucetLoading] = useState(false);
-  const [pathFaucetStatus, setPathFaucetStatus] = useState('');
-  const [pathFaucetTxHash, setPathFaucetTxHash] = useState<string | null>(null);
-
   useEffect(() => {
     const fromUrl = searchParams.get('deploymentId');
     if (fromUrl && fromUrl !== selectedDeploymentId) {
@@ -172,61 +167,6 @@ export default function Signatures() {
       setFaucetTx(hash);
     } catch (e: any) {
       setFaucetTx(`error:${e?.message ?? String(e)}`);
-    }
-  };
-
-  const requestPathUsdFaucet = async () => {
-    if (!walletClient?.account?.address) return;
-    if (chain?.id !== 42431) return;
-
-    setPathFaucetLoading(true);
-    setPathFaucetTxHash(null);
-    setPathFaucetStatus('Requesting PathUSD faucet...');
-
-    try {
-      const res = await fetch('/api/tempo/faucet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: walletClient.account.address }),
-      });
-
-      const text = await res.text();
-      let payload: any = null;
-      try {
-        payload = text ? JSON.parse(text) : null;
-      } catch {
-        payload = null;
-      }
-
-      if (!res.ok) {
-        const msg = payload?.error || `Faucet request failed (${res.status})`;
-        throw new Error(msg);
-      }
-
-      // Try common tx-hash fields first.
-      const txHash: string | null =
-        payload?.txHash ??
-        payload?.transactionHash ??
-        payload?.hash ??
-        payload?.result?.txHash ??
-        payload?.result?.transactionHash ??
-        null;
-
-      // Fallback: find any 0x...64 hex in the response text.
-      const fallbackTxHash =
-        txHash ??
-        (typeof text === 'string' ? text.match(/0x[a-fA-F0-9]{64}/)?.[0] ?? null : null);
-
-      if (fallbackTxHash) {
-        setPathFaucetTxHash(fallbackTxHash);
-        setPathFaucetStatus('Faucet requested. Tx submitted.');
-      } else {
-        setPathFaucetStatus('Faucet requested. Check your wallet balance in a few moments.');
-      }
-    } catch (e: any) {
-      setPathFaucetStatus(`Faucet failed: ${e?.message ?? String(e)}`);
-    } finally {
-      setPathFaucetLoading(false);
     }
   };
 
@@ -626,7 +566,7 @@ export default function Signatures() {
                     <span className="text-destructive">{faucetTx.slice(6)}</span>
                   ) : (
                     <a
-                      href={getExplorerUrl(selectedDeployment?.hostChainId ?? 42431, faucetTx, 'tx')}
+                      href={getExplorerUrl(selectedDeployment?.hostChainId ?? 5042002, faucetTx, 'tx')}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline font-mono"
@@ -641,36 +581,20 @@ export default function Signatures() {
 
           <Card className="mt-4">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">PathUSD Faucet (EVVM on Tempo)</CardTitle>
+              <CardTitle className="text-sm">Arc Funding Notes</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-[10px] text-muted-foreground">
-                Request Tempo fee tokens (<b>PathUSD</b>) for EVVM deployments on <b>Tempo Moderato</b> (chain <b>42431</b>).
+                Arc Testnet uses <b>USDC</b> as the gas-denominated currency. Fund the wallet you use for deployment on Arc
+                before running the EVVM stack deploy flow.
               </p>
-
-              <Button
-                onClick={requestPathUsdFaucet}
-                disabled={
-                  pathFaucetLoading || !walletClient || chain?.id !== 42431 || !walletClient.account
-                }
-                className="w-full h-8 text-xs"
-              >
-                {pathFaucetLoading ? 'Requesting PathUSD...' : 'Request PathUSD'}
-              </Button>
-
-              {pathFaucetStatus && <p className="text-[10px] text-muted-foreground">{pathFaucetStatus}</p>}
-
-              {pathFaucetTxHash && (
-                <div className="mt-2 text-[10px]">
-                  <a
-                    href={getExplorerUrl(42431, pathFaucetTxHash, 'tx')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline font-mono"
-                  >
-                    View PathUSD faucet tx on explorer
-                  </a>
-                </div>
+              <p className="text-[10px] text-muted-foreground">
+                This page can still mint EVVM principal-token balances inside a deployed EVVM instance, but it does not request Arc gas funds for you.
+              </p>
+              {chain?.id !== 5042002 && (
+                <p className="text-[10px] text-warning">
+                  Connect to Arc Testnet in your wallet if you want explorer links and write actions to target the deployment chain directly.
+                </p>
               )}
             </CardContent>
           </Card>

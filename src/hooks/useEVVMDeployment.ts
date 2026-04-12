@@ -14,6 +14,8 @@ import {
 } from '@/lib/storage';
 import { getChainName } from '@/lib/wagmi';
 
+const DEPLOYMENT_STEP_COUNT = 9;
+
 export function useEVVMDeployment() {
   const [deploying, setDeploying] = useState(false);
   const [progress, setProgress] = useState<DeploymentProgress | null>(null);
@@ -81,14 +83,14 @@ export function useEVVMDeployment() {
           record.evvmId = Number(addresses.evvmId);
         }
         record.deploymentStatus = 'completed';
-        record.currentStep = 7;
+        record.currentStep = DEPLOYMENT_STEP_COUNT;
         saveDeployment(record);
 
         setProgress({
           stage: 'complete',
           message: 'Deployment complete!',
-          step: 7,
-          totalSteps: 7,
+          step: DEPLOYMENT_STEP_COUNT,
+          totalSteps: DEPLOYMENT_STEP_COUNT,
         });
 
         return record;
@@ -100,7 +102,7 @@ export function useEVVMDeployment() {
           stage: 'failed',
           message: err?.message || 'Deployment failed',
           step: record.currentStep,
-          totalSteps: 7,
+          totalSteps: DEPLOYMENT_STEP_COUNT,
         });
         return null;
       } finally {

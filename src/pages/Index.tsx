@@ -1,9 +1,8 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Hexagon, Rocket, PenTool, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Hexagon, Rocket, PenTool, LayoutDashboard, ArrowRight, ShieldCheck, Waves, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -11,7 +10,7 @@ const features = [
   {
     icon: Rocket,
     title: 'Deploy EVVM',
-    description: 'Deploy the EVVM stack on Tempo Moderato (42431) + register on Sepolia',
+    description: 'Deploy the EVVM stack on Arc Testnet with Arcscan-linked manifests and Sepolia registry handoff',
     to: '/deploy',
   },
   {
@@ -33,38 +32,60 @@ export default function Index() {
   const navigate = useNavigate();
 
   return (
-    <main className="container max-w-screen-lg px-4 py-12 md:py-20">
+    <main className="container max-w-screen-xl px-4 py-12 md:py-20">
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-        className="text-center mb-16"
+        className="relative overflow-hidden rounded-3xl border border-primary/20 bg-card/70 px-6 py-12 text-center shadow-2xl shadow-primary/5 md:px-12 md:py-16 mb-16"
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 mb-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_hsl(188_87%_56%_/_0.16),_transparent_40%),linear-gradient(135deg,_hsl(205_90%_55%_/_0.08),_transparent_55%)]" />
+        <div className="absolute -left-20 top-10 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -right-16 bottom-0 h-56 w-56 rounded-full bg-success/10 blur-3xl" />
+
+        <div className="relative inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 mb-6">
           <Hexagon className="h-3.5 w-3.5 text-primary" />
-          <span className="text-xs font-medium text-primary">EVVM Ichiban • Tempo Moderato</span>
+          <span className="text-xs font-medium text-primary">EVVM Arc Deploy Console</span>
         </div>
 
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-          Deploy Your Virtual
+        <h1 className="relative text-3xl md:text-5xl font-bold tracking-tight mb-4">
+          Launch Your Virtual
           <br />
-          <span className="text-gradient-primary">Blockchain Instance</span>
+          <span className="text-gradient-primary">Blockchain on Arc Testnet</span>
         </h1>
 
-        <p className="text-muted-foreground max-w-md mx-auto mb-8 text-sm md:text-base">
-          Infraless EVM virtualization. Deploy EVVM contracts, generate EIP-191 signatures,
-          and manage your virtual blockchain — all from your browser.
+        <p className="relative text-muted-foreground max-w-2xl mx-auto mb-8 text-sm md:text-base leading-relaxed">
+          Stablecoin-gas deployment for EVVM on Arc Testnet. Configure your stack, push the full bytecode-backed
+          contract suite on-chain, and complete registry registration on Ethereum Sepolia without leaving the browser.
         </p>
 
+        <div className="relative grid gap-3 text-left md:grid-cols-3 mb-8">
+          <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
+            <Waves className="mb-3 h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold">Arc-native gas flow</p>
+            <p className="mt-1 text-xs text-muted-foreground">Deploy with USDC-denominated gas on Arc Testnet chain `5042002`.</p>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
+            <ShieldCheck className="mb-3 h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold">Bytecode-backed deploys</p>
+            <p className="mt-1 text-xs text-muted-foreground">Uses bundled EVVM bytecodes and link references for deterministic contract deployment.</p>
+          </div>
+          <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
+            <Landmark className="mb-3 h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold">Registry handoff</p>
+            <p className="mt-1 text-xs text-muted-foreground">Registers the deployed EVVM on the official Sepolia registry after Arc deployment finishes.</p>
+          </div>
+        </div>
+
         {!isConnected ? (
-          <div className="flex justify-center">
+          <div className="relative flex justify-center">
             <ConnectButton />
           </div>
         ) : (
           <Button
             onClick={() => navigate('/deploy')}
-            className="h-10 px-6 gap-2 glow-primary"
+            className="relative h-10 px-6 gap-2 glow-primary"
           >
             Start Deploying
             <ArrowRight className="h-4 w-4" />
@@ -107,7 +128,7 @@ export default function Index() {
         <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <span>EVVM v3</span>
           <span className="h-3 w-px bg-border" />
-          <span>Tempo Moderato</span>
+          <span>Arc Testnet</span>
           <span className="h-3 w-px bg-border" />
           <span>EIP-191</span>
           <span className="h-3 w-px bg-border" />

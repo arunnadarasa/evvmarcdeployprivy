@@ -7,16 +7,16 @@ import { config } from '@/lib/wagmi';
 const queryClient = new QueryClient();
 
 const evvmTheme = darkTheme({
-  accentColor: 'hsl(221, 100%, 50%)',
+  accentColor: 'hsl(188, 87%, 56%)',
   accentColorForeground: 'white',
   borderRadius: 'small',
-  fontStack: 'system',
+  fontStack: 'rounded',
 });
 
 // Override specific theme values
-evvmTheme.colors.connectButtonBackground = 'hsl(240, 20%, 8%)';
-evvmTheme.colors.modalBackground = 'hsl(240, 20%, 6%)';
-evvmTheme.colors.modalBorder = 'hsl(240, 22%, 15%)';
+evvmTheme.colors.connectButtonBackground = 'hsl(205, 33%, 11%)';
+evvmTheme.colors.modalBackground = 'hsl(205, 39%, 7%)';
+evvmTheme.colors.modalBorder = 'hsl(201, 30%, 20%)';
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (

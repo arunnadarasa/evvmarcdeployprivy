@@ -92,7 +92,7 @@ export default function Deploy() {
         <Rocket className="h-8 w-8 text-primary mx-auto mb-4" />
         <h1 className="text-xl font-bold mb-2">Connect Wallet to Deploy</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Connect your wallet to deploy EVVM contracts on Tempo Moderato (42431).
+          Connect your wallet to deploy EVVM contracts on Arc Testnet (5042002).
         </p>
         <ConnectButton />
       </main>
@@ -104,7 +104,7 @@ export default function Deploy() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-lg font-bold">Deploy EVVM Instance</h1>
-          <p className="text-xs text-muted-foreground">9-step deployment + Sepolia registry</p>
+          <p className="text-xs text-muted-foreground">Arc Testnet deployment with Ethereum Sepolia registry registration</p>
         </div>
         {chain && <NetworkBadge chainId={chain.id} />}
       </div>
@@ -209,8 +209,8 @@ export default function Deploy() {
                 <div className="flex items-center gap-2 rounded-md bg-muted/50 border border-border p-2">
                   <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <p className="text-[10px] text-muted-foreground">
-                    Deployment fees are paid in PathUSD-style TIP-20 tokens on Tempo Moderato.
-                    Each contract deployment is a separate transaction.
+                    Arc Testnet uses USDC as the gas-denominated currency. Each EVVM contract deployment and setup action is
+                    sent as a separate on-chain transaction, then registration continues on Sepolia.
                   </p>
                 </div>
 
@@ -243,7 +243,7 @@ export default function Deploy() {
                 title={step.title}
                 description={step.description}
                 status={getStepStatus(i)}
-                chainId={chain?.id || 42431}
+                chainId={chain?.id || 5042002}
                 txHash={progress?.step === i + 1 ? progress.txHash : undefined}
                 totalSteps={DEPLOYMENT_STEPS.length}
               />

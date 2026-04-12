@@ -20,7 +20,7 @@ import {
 const REGISTRY_EVM_SEPOLIA_ADDRESS =
   '0x389dC8fb09211bbDA841D59f4a51160dA2377832' as Address;
 
-const TEMPO_MODERATO_CHAIN_ID = 42431 as const;
+const ARC_TESTNET_CHAIN_ID = 5042002 as const;
 
 const RegistryEvvmABI = [
   {
@@ -183,9 +183,9 @@ async function deployContractWithRetry(
         throw new Error('No contract address in receipt');
       }
 
-      // Some Tempo RPCs may return empty `eth_getCode` even when txs succeeded.
-      // Tempo Moderato: prioritize tx receipt success over eth_getCode verification.
-      const shouldVerifyBytecode = walletClient.chain?.id !== TEMPO_MODERATO_CHAIN_ID;
+      // Some non-standard testnet RPCs can lag on `eth_getCode` even when receipts already succeeded.
+      // Arc Testnet can be slightly eventual here, so we allow receipt success to be authoritative.
+      const shouldVerifyBytecode = walletClient.chain?.id !== ARC_TESTNET_CHAIN_ID;
       if (shouldVerifyBytecode) {
         // Verify bytecode exists (some RPCs lag right after mining).
         let code: `0x${string}` | undefined;
@@ -255,7 +255,7 @@ export async function deployEVVMContracts(
     EvvmID: 0n,
     principalTokenName: config.principalTokenName,
     principalTokenSymbol: config.principalTokenSymbol,
-    // Matches Tempo's BaseInputs.sol placeholder (0x...01).
+    // Matches EVVM's BaseInputs.sol placeholder (0x...01).
     principalTokenAddress: '0x0000000000000000000000000000000000000001' as Address,
     totalSupply: config.totalSupply,
     eraTokens: config.eraTokens,
@@ -379,7 +379,7 @@ export async function deployEVVMContracts(
   onProgress({ stage: 'deploying-p2pswap', message: 'P2PSwap deployed', txHash: p2pSwap.txHash, step: 8, totalSteps });
 
   // Step 9: Register EVVM on Ethereum Sepolia Registry
-  const hostChainId = walletClient.chain?.id ?? TEMPO_MODERATO_CHAIN_ID;
+  const hostChainId = walletClient.chain?.id ?? ARC_TESTNET_CHAIN_ID;
   onProgress({ stage: 'switching-to-sepolia', message: 'Switching to Ethereum Sepolia for registry registration...', step: 9, totalSteps });
 
   await walletClient.switchChain?.({ id: sepolia.id });
@@ -422,8 +422,8 @@ export async function deployEVVMContracts(
     totalSteps,
   });
 
-  onProgress({ stage: 'switching-back', message: 'Switching back to Tempo Moderato...', step: 9, totalSteps });
-  await walletClient.switchChain?.({ id: TEMPO_MODERATO_CHAIN_ID });
+  onProgress({ stage: 'switching-back', message: 'Switching back to Arc Testnet...', step: 9, totalSteps });
+  await walletClient.switchChain?.({ id: ARC_TESTNET_CHAIN_ID });
 
   onProgress({ stage: 'deployment-complete', message: 'All contracts deployed and registered!', step: 9, totalSteps });
 

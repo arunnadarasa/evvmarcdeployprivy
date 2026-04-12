@@ -19,7 +19,7 @@ export function Navbar() {
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
             <Hexagon className="h-5 w-5 text-primary" />
-            <span className="text-sm">EVVM <span className="text-muted-foreground font-normal">ichiban</span></span>
+            <span className="text-sm">EVVM <span className="text-muted-foreground font-normal">arc</span></span>
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
