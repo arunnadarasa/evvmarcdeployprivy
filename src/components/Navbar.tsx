@@ -1,7 +1,7 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Hexagon, Rocket, PenTool, LayoutDashboard } from 'lucide-react';
+import { PrivyAuthButton } from '@/components/PrivyAuthButton';
 
 const navItems = [
   { to: '/', label: 'Home', icon: Hexagon },
@@ -39,11 +39,7 @@ export function Navbar() {
             ))}
           </nav>
         </div>
-        <ConnectButton
-          chainStatus="icon"
-          accountStatus="address"
-          showBalance={false}
-        />
+        <PrivyAuthButton />
       </div>
     </header>
   );

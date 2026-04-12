@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,9 +9,12 @@ import { ManifestCard } from '@/components/ManifestCard';
 import { NetworkBadge } from '@/components/NetworkBadge';
 import { useEVVMDeployment } from '@/hooks/useEVVMDeployment';
 import { hasBytecodes } from '@/lib/contracts/bytecodes';
+import { getExplorerUrl } from '@/lib/wagmi';
 import type { StepStatus } from '@/components/StatusCircle';
 import type { DeploymentRecord } from '@/lib/storage';
-import { AlertTriangle, Rocket, Info } from 'lucide-react';
+import { AlertTriangle, Check, Copy, ExternalLink, Rocket, Info } from 'lucide-react';
+import { PrivyAuthButton } from '@/components/PrivyAuthButton';
+import { useAppWallet } from '@/hooks/useAppWallet';
 
 const DEPLOYMENT_STEPS = [
   { title: 'Staking', description: 'Deploy Staking contract (no dependencies)' },
@@ -30,10 +31,12 @@ const DEPLOYMENT_STEPS = [
 type Phase = 'configure' | 'deploy' | 'complete';
 
 export default function Deploy() {
-  const { address, isConnected, chain } = useAccount();
+  const { eoaAddress, isConnected, chain } = useAppWallet();
   const { deploying, progress, error, deploy } = useEVVMDeployment();
   const [phase, setPhase] = useState<Phase>('configure');
   const [completedDeployment, setCompletedDeployment] = useState<DeploymentRecord | null>(null);
+  const [copiedTx, setCopiedTx] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState(false);
   const bytesReady = hasBytecodes();
 
   // Form state
@@ -46,21 +49,21 @@ export default function Deploy() {
 
   // Auto-fill connected address
   const fillAddress = () => {
-    if (address) {
-      if (!adminAddr) setAdminAddr(address);
-      if (!goldenFisher) setGoldenFisher(address);
-      if (!activator) setActivator(address);
+    if (eoaAddress) {
+      if (!adminAddr) setAdminAddr(eoaAddress);
+      if (!goldenFisher) setGoldenFisher(eoaAddress);
+      if (!activator) setActivator(eoaAddress);
     }
   };
 
   const handleDeploy = async () => {
-    if (!address) return;
+    if (!eoaAddress) return;
     setPhase('deploy');
 
     const result = await deploy({
-      adminAddress: (adminAddr || address) as `0x${string}`,
-      goldenFisherAddress: (goldenFisher || address) as `0x${string}`,
-      activatorAddress: (activator || address) as `0x${string}`,
+      adminAddress: (adminAddr || eoaAddress) as `0x${string}`,
+      goldenFisherAddress: (goldenFisher || eoaAddress) as `0x${string}`,
+      activatorAddress: (activator || eoaAddress) as `0x${string}`,
       evvmName,
       principalTokenName: tokenName,
       principalTokenSymbol: tokenSymbol,
@@ -86,15 +89,29 @@ export default function Deploy() {
     return 'pending';
   };
 
+  const handleCopyTx = async () => {
+    if (!progress?.txHash) return;
+    await navigator.clipboard.writeText(progress.txHash);
+    setCopiedTx(true);
+    window.setTimeout(() => setCopiedTx(false), 2000);
+  };
+
+  const handleCopyAddress = async () => {
+    if (!eoaAddress) return;
+    await navigator.clipboard.writeText(eoaAddress);
+    setCopiedAddress(true);
+    window.setTimeout(() => setCopiedAddress(false), 2000);
+  };
+
   if (!isConnected) {
     return (
       <main className="container max-w-lg px-4 py-16 text-center">
         <Rocket className="h-8 w-8 text-primary mx-auto mb-4" />
         <h1 className="text-xl font-bold mb-2">Connect Wallet to Deploy</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Connect your wallet to deploy EVVM contracts on Arc Testnet (5042002).
+          Sign in with Privy to create your embedded wallet, fund it for Arc deployment, then use ZeroDev only for the Sepolia registration step.
         </p>
-        <ConnectButton />
+        <PrivyAuthButton className="mx-auto inline-flex" />
       </main>
     );
   }
@@ -181,7 +198,7 @@ export default function Deploy() {
                       <Input
                         value={adminAddr}
                         onChange={(e) => setAdminAddr(e.target.value)}
-                        placeholder={address}
+                        placeholder={eoaAddress}
                         className="mt-0.5 h-8 text-xs font-mono"
                       />
                     </div>
@@ -190,7 +207,7 @@ export default function Deploy() {
                       <Input
                         value={goldenFisher}
                         onChange={(e) => setGoldenFisher(e.target.value)}
-                        placeholder={address}
+                        placeholder={eoaAddress}
                         className="mt-0.5 h-8 text-xs font-mono"
                       />
                     </div>
@@ -199,7 +216,7 @@ export default function Deploy() {
                       <Input
                         value={activator}
                         onChange={(e) => setActivator(e.target.value)}
-                        placeholder={address}
+                        placeholder={eoaAddress}
                         className="mt-0.5 h-8 text-xs font-mono"
                       />
                     </div>
@@ -209,9 +226,41 @@ export default function Deploy() {
                 <div className="flex items-center gap-2 rounded-md bg-muted/50 border border-border p-2">
                   <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <p className="text-[10px] text-muted-foreground">
-                    Arc Testnet uses USDC as the gas-denominated currency. Each EVVM contract deployment and setup action is
-                    sent as a separate on-chain transaction, then registration continues on Sepolia.
+                    Privy creates the signer wallet. Fund that wallet on Arc first, then deploy directly from it. ZeroDev remains in the flow for the Sepolia registry registration.
                   </p>
+                </div>
+
+                <div className="rounded-md border border-primary/20 bg-card/70 p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+                    Fund Wallet First
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Use the Privy wallet below as your funded deployer on Arc Testnet, then request test funds from Circle Faucet before starting deployment.
+                  </p>
+                  <p className="mt-2 break-all font-mono text-[11px] text-foreground">
+                    {eoaAddress}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => void handleCopyAddress()}
+                    >
+                      {copiedAddress ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedAddress ? 'Copied' : 'Copy wallet'}
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                      <a
+                        href="https://faucet.circle.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Open Circle Faucet
+                      </a>
+                    </Button>
+                  </div>
                 </div>
 
                 <Button
@@ -236,6 +285,56 @@ export default function Deploy() {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-2"
           >
+            {progress && (
+              <div className="mb-4 rounded-md border border-primary/20 bg-card/80 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+                      {progress.txHash ? 'Latest Transaction' : 'Deployment Status'}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{progress.message}</p>
+                    {progress.txHash ? (
+                      <p className="mt-2 break-all font-mono text-[11px] text-foreground">
+                        {progress.txHash}
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        No transaction hash yet. This usually means we&apos;re still waiting for wallet approval or for the transaction broadcast to return.
+                      </p>
+                    )}
+                  </div>
+                  {progress.txHash && (
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => void handleCopyTx()}
+                      >
+                        {copiedTx ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        {copiedTx ? 'Copied' : 'Copy'}
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                      >
+                        <a
+                          href={getExplorerUrl(chain?.id || 5042002, progress.txHash, 'tx')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Open
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {DEPLOYMENT_STEPS.map((step, i) => (
               <DeploymentStepCard
                 key={i}

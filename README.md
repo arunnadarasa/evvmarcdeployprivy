@@ -1,6 +1,6 @@
 # EVVM Arc Deploy
 
-A browser-based deploy console for launching EVVM instances on Arc Testnet, registering them on the official EVVM registry on Ethereum Sepolia, and managing deployment manifests and signature workflows.
+A browser-based deploy console for launching EVVM instances on Arc Testnet, registering them on the official EVVM registry on Ethereum Sepolia, and managing deployment manifests and signature workflows with Privy-authenticated wallets and ZeroDev-sponsored transactions.
 
 ## Overview
 
@@ -47,16 +47,15 @@ The app uses bundled EVVM creation bytecodes plus client-side deployment logic t
 
 - **Frontend:** React 18, TypeScript, Vite 8
 - **UI:** Tailwind CSS, shadcn/ui, Framer Motion
-- **Wallet/Web3:** wagmi, RainbowKit, viem
+- **Wallet/Web3:** Privy, ZeroDev Kernel, viem
 - **EVVM:** `@evvm/viem-signature-library`
 
 ## Prerequisites
 
 - Node.js 18+
 - npm
-- A wallet that can connect to:
-  - Arc Testnet
-  - Ethereum Sepolia
+- A Privy app configured with social login providers
+- A ZeroDev project for sponsored user operations
 
 ## Getting started
 
@@ -73,12 +72,11 @@ http://localhost:8080
 
 ## Deployment flow
 
-1. Connect a wallet on Arc Testnet.
-2. Fund that wallet for Arc Testnet transactions.
+1. Sign in with Privy using social login.
+2. Let Privy create an embedded wallet for the session.
 3. Configure EVVM metadata and admin addresses in the app.
-4. Deploy the EVVM contracts on Arc.
-5. Approve the wallet switch to Ethereum Sepolia for registry registration.
-6. Approve the wallet switch back to Arc Testnet.
+4. Deploy the EVVM contracts on Arc through ZeroDev-sponsored smart-account transactions.
+5. Register the EVVM on Ethereum Sepolia through the same Privy-owned signer.
 
 ## Scripts
 
@@ -96,14 +94,16 @@ http://localhost:8080
 
 - `src/pages/` - App screens for home, deploy, signatures, and dashboard
 - `src/lib/contracts/` - Bytecodes, deploy orchestration, and registry interaction
-- `src/lib/wagmi.ts` - Arc Testnet and Sepolia wallet/network configuration
+- `src/lib/wagmi.ts` - Arc Testnet and Sepolia chain/public-client configuration
 - `src/hooks/useEVVMDeployment.ts` - Deployment progress and persistence logic
+- `src/hooks/useAppWallet.tsx` - Privy authentication, embedded wallet handling, and ZeroDev smart-account client creation
 - `src/components/` - Shared UI, wallet provider, navbar, and deploy cards
 
 ## Notes
 
 - The deployer currently uses bundled EVVM bytecodes checked into `src/lib/contracts/bytecodes.ts`.
 - Registry registration still occurs on Ethereum Sepolia because that is where the EVVM registry contract lives.
+- The app defaults to `VITE_PRIVY_APP_ID=cmmv0z6dv06bs0djs07c7vrl3` and `VITE_ZERODEV_PROJECT_ID=92691254-2986-488c-9c5d-b6028a3deb3a`, but you can override both with Vite env vars.
 - The Vite dev server is configured for port `8080` in `vite.config.ts`.
 
 ## Lovable compatibility

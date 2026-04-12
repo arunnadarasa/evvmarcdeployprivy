@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAccount, useWalletClient } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { motion } from 'framer-motion';
 import {
   buildMessageSignedForPay,
@@ -18,9 +16,15 @@ import { Check, Copy, PenTool } from 'lucide-react';
 import { getDeployment, getDeployments, type DeploymentRecord } from '@/lib/storage';
 import { useSearchParams } from 'react-router-dom';
 import { getExplorerUrl } from '@/lib/wagmi';
+import { PrivyAuthButton } from '@/components/PrivyAuthButton';
+import { useAppWallet } from '@/hooks/useAppWallet';
 
 const ZERO_ADDR = '0x0000000000000000000000000000000000000000' as `0x${string}`;
 const MATE_ADDR = '0x0000000000000000000000000000000000000001' as `0x${string}`;
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 const CoreFaucetABI = [
   {
@@ -43,8 +47,7 @@ function generateRandomNonce(): string {
 }
 
 export default function Signatures() {
-  const { isConnected, chain } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { isConnected, chain, eoaAddress, getEoaWalletClient, getSmartAccountClient } = useAppWallet();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [signature, setSignature] = useState('');
@@ -150,10 +153,12 @@ export default function Signatures() {
   };
 
   const runFaucet = async () => {
-    if (!walletClient || !selectedDeployment?.evvmCoreAddress) return;
+    if (!selectedDeployment?.evvmCoreAddress) return;
+    const walletClient = await getSmartAccountClient(selectedDeployment.hostChainId);
     const qty = BigInt(faucetAmount || '0');
     if (qty === 0n) return;
-    const user = (faucetTo || (walletClient.account?.address as `0x${string}`)) as `0x${string}`;
+    const user = (faucetTo || eoaAddress) as `0x${string}`;
+    if (!user) return;
 
     try {
       const hash = await walletClient.writeContract({
@@ -161,12 +166,12 @@ export default function Signatures() {
         abi: CoreFaucetABI,
         functionName: 'addBalance',
         args: [user, MATE_ADDR, qty],
-        account: walletClient.account!,
+        account: walletClient.account.address,
         chain: walletClient.chain,
       });
       setFaucetTx(hash);
-    } catch (e: any) {
-      setFaucetTx(`error:${e?.message ?? String(e)}`);
+    } catch (e) {
+      setFaucetTx(`error:${getErrorMessage(e)}`);
     }
   };
 
@@ -190,7 +195,7 @@ export default function Signatures() {
   const canMintPrincipalFaucet = faucetRecipientOk && faucetAmountOk;
 
   const signPay = async () => {
-    if (!walletClient) return;
+    const walletClient = await getEoaWalletClient(selectedDeployment?.hostChainId ?? chain?.id ?? 5042002);
     setSigning(true);
     try {
       const msg = buildMessageSignedForPay(
@@ -206,17 +211,17 @@ export default function Signatures() {
       setMessage(msg);
       const sig = await walletClient.signMessage({
         message: msg,
-        account: walletClient.account!,
+        account: walletClient.account,
       });
       setSignature(sig);
-    } catch (e: any) {
-      setSignature(`Error: ${e.message}`);
+    } catch (e) {
+      setSignature(`Error: ${getErrorMessage(e)}`);
     }
     setSigning(false);
   };
 
   const signDisperse = async () => {
-    if (!walletClient) return;
+    const walletClient = await getEoaWalletClient(selectedDeployment?.hostChainId ?? chain?.id ?? 5042002);
     setSigning(true);
     try {
       // Parse recipients: "address:amount" per line
@@ -244,17 +249,17 @@ export default function Signatures() {
       setMessage(msg);
       const sig = await walletClient.signMessage({
         message: msg,
-        account: walletClient.account!,
+        account: walletClient.account,
       });
       setSignature(sig);
-    } catch (e: any) {
-      setSignature(`Error: ${e.message}`);
+    } catch (e) {
+      setSignature(`Error: ${getErrorMessage(e)}`);
     }
     setSigning(false);
   };
 
   const signStaking = async () => {
-    if (!walletClient) return;
+    const walletClient = await getEoaWalletClient(selectedDeployment?.hostChainId ?? chain?.id ?? 5042002);
     setSigning(true);
     try {
       const msg = buildMessageSignedForPublicStaking(
@@ -266,11 +271,11 @@ export default function Signatures() {
       setMessage(msg);
       const sig = await walletClient.signMessage({
         message: msg,
-        account: walletClient.account!,
+        account: walletClient.account,
       });
       setSignature(sig);
-    } catch (e: any) {
-      setSignature(`Error: ${e.message}`);
+    } catch (e) {
+      setSignature(`Error: ${getErrorMessage(e)}`);
     }
     setSigning(false);
   };
@@ -281,9 +286,9 @@ export default function Signatures() {
         <PenTool className="h-8 w-8 text-primary mx-auto mb-4" />
         <h1 className="text-xl font-bold mb-2">Connect Wallet to Sign</h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Connect your wallet to generate EIP-191 signatures for EVVM operations.
+          Sign in with Privy to generate EIP-191 signatures from your embedded wallet.
         </p>
-        <ConnectButton />
+        <PrivyAuthButton className="mx-auto inline-flex" />
       </main>
     );
   }
@@ -357,7 +362,7 @@ export default function Signatures() {
                 <div className="mt-0.5 grid grid-cols-3 gap-2">
                   <select
                     value={payTokenPreset}
-                    onChange={(e) => setPayTokenPreset(e.target.value as any)}
+                    onChange={(e) => setPayTokenPreset(e.target.value as 'eth' | 'principal' | 'custom')}
                     className="h-8 rounded-md border border-input bg-background px-2 text-xs"
                   >
                     <option value="eth">ETH (0x0)</option>
@@ -425,7 +430,7 @@ export default function Signatures() {
                 <div className="mt-0.5 grid grid-cols-3 gap-2">
                   <select
                     value={disperseTokenPreset}
-                    onChange={(e) => setDisperseTokenPreset(e.target.value as any)}
+                    onChange={(e) => setDisperseTokenPreset(e.target.value as 'eth' | 'principal' | 'custom')}
                     className="h-8 rounded-md border border-input bg-background px-2 text-xs"
                   >
                     <option value="eth">ETH (0x0)</option>
@@ -525,7 +530,7 @@ export default function Signatures() {
                 <Input
                   value={faucetTo}
                   onChange={(e) => setFaucetTo(e.target.value)}
-                  placeholder={walletClient?.account?.address}
+                  placeholder={eoaAddress}
                   className="mt-0.5 h-8 text-xs font-mono"
                 />
               </div>
@@ -553,7 +558,7 @@ export default function Signatures() {
                 disabled={
                   signing ||
                   !selectedDeployment?.evvmCoreAddress ||
-                  !walletClient ||
+                  !isConnected ||
                   !canMintPrincipalFaucet
                 }
                 className="w-full h-8 text-xs"

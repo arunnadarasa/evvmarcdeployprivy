@@ -1,10 +1,10 @@
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Hexagon, Rocket, PenTool, LayoutDashboard, ArrowRight, ShieldCheck, Waves, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { PrivyAuthButton } from '@/components/PrivyAuthButton';
+import { useAppWallet } from '@/hooks/useAppWallet';
 
 const features = [
   {
@@ -28,7 +28,7 @@ const features = [
 ];
 
 export default function Index() {
-  const { isConnected } = useAccount();
+  const { isConnected } = useAppWallet();
   const navigate = useNavigate();
 
   return (
@@ -80,7 +80,7 @@ export default function Index() {
 
         {!isConnected ? (
           <div className="relative flex justify-center">
-            <ConnectButton />
+            <PrivyAuthButton />
           </div>
         ) : (
           <Button
@@ -132,7 +132,7 @@ export default function Index() {
           <span className="h-3 w-px bg-border" />
           <span>EIP-191</span>
           <span className="h-3 w-px bg-border" />
-          <span>wagmi + viem</span>
+          <span>Privy + ZeroDev</span>
         </div>
       </motion.div>
     </main>

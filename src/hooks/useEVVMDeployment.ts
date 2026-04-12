@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { useCallback, useState } from 'react';
 import {
   deployEVVMContracts,
   type DeploymentConfig,
@@ -12,23 +11,32 @@ import {
   generateId,
   type DeploymentRecord,
 } from '@/lib/storage';
-import { getChainName } from '@/lib/wagmi';
+import { arcTestnet, getChainName, getPublicClient, sepolia } from '@/lib/wagmi';
+import { useAppWallet } from '@/hooks/useAppWallet';
 
 const DEPLOYMENT_STEP_COUNT = 9;
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Deployment failed';
+}
 
 export function useEVVMDeployment() {
   const [deploying, setDeploying] = useState(false);
   const [progress, setProgress] = useState<DeploymentProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { address, chain } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const {
+    eoaAddress,
+    isConnected,
+    getEoaWalletClient,
+    getSmartAccountClient,
+    switchChain,
+  } = useAppWallet();
 
-  const canDeploy = !!address && !!walletClient && !!publicClient && hasBytecodes();
+  const canDeploy = isConnected && !!eoaAddress && hasBytecodes();
 
   const deploy = useCallback(
     async (config: DeploymentConfig): Promise<DeploymentRecord | null> => {
-      if (!walletClient || !publicClient || !chain) {
+      if (!eoaAddress) {
         setError('Wallet not connected');
         return null;
       }
@@ -43,8 +51,8 @@ export function useEVVMDeployment() {
         evvmName: config.evvmName,
         principalTokenName: config.principalTokenName,
         principalTokenSymbol: config.principalTokenSymbol,
-        hostChainId: chain.id,
-        hostChainName: getChainName(chain.id),
+        hostChainId: arcTestnet.id,
+        hostChainName: getChainName(arcTestnet.id),
         adminAddress: config.adminAddress,
         goldenFisherAddress: config.goldenFisherAddress,
         activatorAddress: config.activatorAddress,
@@ -59,10 +67,19 @@ export function useEVVMDeployment() {
       saveDeployment(record);
 
       try {
+        await switchChain(arcTestnet.id);
+        const arcWalletClient = await getEoaWalletClient(arcTestnet.id);
+        const sepoliaWalletClient = await getSmartAccountClient(sepolia.id);
+        await switchChain(arcTestnet.id);
+
         const addresses: ContractAddresses = await deployEVVMContracts(
           config,
-          walletClient,
-          publicClient,
+          {
+            arcWalletClient,
+            arcPublicClient: getPublicClient(arcTestnet.id),
+            sepoliaWalletClient,
+            sepoliaPublicClient: getPublicClient(sepolia.id),
+          },
           (p) => {
             setProgress(p);
             record.currentStep = p.step;
@@ -93,14 +110,17 @@ export function useEVVMDeployment() {
           totalSteps: DEPLOYMENT_STEP_COUNT,
         });
 
+        await switchChain(arcTestnet.id);
+
         return record;
-      } catch (err: any) {
+      } catch (err) {
+        const message = getErrorMessage(err);
         record.deploymentStatus = 'failed';
         saveDeployment(record);
-        setError(err?.message || 'Deployment failed');
+        setError(message);
         setProgress({
           stage: 'failed',
-          message: err?.message || 'Deployment failed',
+          message,
           step: record.currentStep,
           totalSteps: DEPLOYMENT_STEP_COUNT,
         });
@@ -109,7 +129,7 @@ export function useEVVMDeployment() {
         setDeploying(false);
       }
     },
-    [walletClient, publicClient, chain]
+    [eoaAddress, getEoaWalletClient, getSmartAccountClient, switchChain]
   );
 
   return { deploying, progress, error, canDeploy, deploy };
